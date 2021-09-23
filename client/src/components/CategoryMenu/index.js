@@ -6,13 +6,14 @@ import {
   UPDATE_CATEGORIES,
   UPDATE_CURRENT_CATEGORY,
 } from "../../utils/actions";
+import { idbPromise } from "../../utils/helpers";
 
 function CategoryMenu() {
   const [state, dispatch] = useStoreContext();
 
   const { categories } = state;
 
-  const { data: categoryData } = useQuery(QUERY_CATEGORIES);
+  const { loading, data: categoryData } = useQuery(QUERY_CATEGORIES);
 
   //Remember how the useEffect() Hook works. It is a function that takes two arguments,
   //a function to run given a certain condition, and then the condition. In this case,
@@ -28,8 +29,18 @@ function CategoryMenu() {
         type: UPDATE_CATEGORIES,
         categories: categoryData.categories,
       });
+      categoryData.categories.forEach((category) => {
+        idbPromise("categories", "put", category);
+      });
+    } else if (!loading) {
+      idbPromise("categories", "get").then((categories) => {
+        dispatch({
+          type: UPDATE_CATEGORIES,
+          categories: categories,
+        });
+      });
     }
-  }, [categoryData, dispatch]);
+  }, [categoryData, loading, dispatch]);
 
   const handleClick = (id) => {
     dispatch({
